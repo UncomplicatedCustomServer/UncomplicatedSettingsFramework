@@ -1,0 +1,55 @@
+Id: 101
+Name: "ExampleSetting"
+RequiredPermission: "usf.example"
+Settings:
+  - SettingType: Button
+    CustomData:
+      Id: 1
+      Label: "Activate Feature"
+      HintDescription: "Click to activate"
+      ButtonText: "Enable"
+
+  - SettingType: Slider
+    CustomData:
+      Id: 2
+      Label: "Volume"
+      HintDescription: "Adjust the volume"
+      MinValue: 0
+      MaxValue: 100
+      DefaultValue: 50
+      Integer: true
+      ValueToStringFormat: "0.0"
+      FinalDisplayFormat: "{0}%"
+
+  - SettingType: Dropdown
+    CustomData:
+      Id: 3
+      Label: "Select Mode"
+      HintDescription: "Choose an operation mode"
+      Contents:
+        - "Mode A"
+        - "Mode B"
+        - "Mode C"
+      DropdownEntryType: Normal
+      DefaultContentSelected: 1
+
+  - SettingType: Keybind
+    CustomData:
+      Id: 4
+      Label: "key"
+      HintDescription: "Bind a key"
+      PreventInteractionOnGui: true
+      AllowSpectatorTrigger: false
+      SuggestedKey: F5
+
+SpawnData:
+  - SendOnJoin: true
+    SendToAll: false
+    RemoveOnDeath: true
+    SendOnTeamSpawn:
+      - Faction: FoundationEnemy
+        Send: true
+    AllowedRoles:
+      - ChaosConscript
+      - ClassD
+      - Tutorial

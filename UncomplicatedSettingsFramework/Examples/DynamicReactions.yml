@@ -1,0 +1,46 @@
+id: 3
+name: "Dynamic Reactions"
+required_permission: "usf.dynamic"
+
+spawn_data:
+  - send_on_join: true
+    send_to_all: true
+    remove_on_death: false
+    send_on_team_spawn:
+      - faction: FoundationEnemy
+        send: true
+    allowed_roles:
+      - ChaosConscript
+      - ClassD
+      - Tutorial
+
+settings:
+  - setting_type: Button
+    custom_data_list:
+      - id: 301
+        label: "Emergency Heal"
+        hint_description: "Heal if low, send hint if not."
+        button_text: "Check Health"
+    actions:
+      OnClicked:
+        - "IF {player.health} < 30 THEN HP 100 ELSE HINT You're not hurt enough to heal."
+
+  - setting_type: Button
+    custom_data_list:
+      - id: 302
+        label: "Item Check"
+        hint_description: "Give a Medkit if you're empty-handed."
+        button_text: "Check Items"
+    actions:
+      OnClicked:
+        - "IF {player.itemcount} == 0 THEN GIVE Medkit ELSE HINT You already have items."
+
+  - setting_type: Button
+    custom_data_list:
+      - id: 303
+        label: "Team Info"
+        hint_description: "Display team-specific behavior."
+        button_text: "Check Team"
+    actions:
+      OnClicked:
+        - "IF {player.team} == SCPs THEN SAY You're one of the scps. ELSE SAY You're part of the humans."
