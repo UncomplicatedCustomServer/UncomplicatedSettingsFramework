@@ -1,3 +1,8 @@
+![Discord](https://img.shields.io/discord/1170301876990914631?style=for-the-badge&logo=discord&color=%235865F2)
+![GitHub Downloads (all assets, latest release)](https://img.shields.io/github/downloads/UncomplicatedCustomServer/UncomplicatedSettingsFramework/latest/total?style=for-the-badge&logo=github)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr-raw/UncomplicatedCustomServer/UncomplicatedSettingsFramework?style=for-the-badge&logo=github)
+
+
 # UncomplicatedSettingsFramework
 
 UncomplicatedSettingsFramework (USF) is a powerful and flexible framework that allows server owners to create and manage server-specific settings through simple YAML configuration files, with no coding required.
