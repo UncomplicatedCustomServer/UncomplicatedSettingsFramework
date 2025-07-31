@@ -53,7 +53,6 @@ namespace UncomplicatedSettingsFramework.Commands.Console
                 }
             });
             
-
             return true;
         }
     }

@@ -7,7 +7,6 @@ using System.Net.Http;
 using Newtonsoft.Json;
 using System.Linq;
 using UncomplicatedSettingsFramework.Api.Features.Helper;
-using LabApi.Features.Wrappers;
 
 #if EXILED
 using Exiled.API.Features;
@@ -131,7 +130,7 @@ namespace UncomplicatedSettingsFramework.Api.Commands.Console
                         {
                             File.WriteAllBytes(pluginPath, fileBytes);
                             LogManager.Updater($"{PluginDllName} downloaded and replaced successfully ({fileBytes.Length} bytes).");
-                            Server.RunCommand("rnr");
+                            LabApi.Features.Wrappers.Server.RunCommand("rnr");
                         }
                         catch (IOException ex)
                         {
