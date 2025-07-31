@@ -452,19 +452,25 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Api\Struct\Triplet.cs" />
     <Compile Include="Api\Commands\Admin\List.cs" />
     <Compile Include="Api\Commands\Admin\Reload.cs" />
     <Compile Include="Api\Commands\Admin\Remove.cs" />
     <Compile Include="Api\Commands\Admin\Get.cs" />
     <Compile Include="Api\Commands\Admin\Give.cs" />
+    <Compile Include="Api\Commands\Console\USFLogs.cs" />
+    <Compile Include="Api\Commands\Console\Update.cs" />
+    <Compile Include="Api\Commands\Console\UpdateCheck.cs" />
     <Compile Include="Api\Commands\BaseCommand.cs" />
+    <Compile Include="Api\Enums\DynamicContentType.cs" />
     <Compile Include="Api\Enums\SettingType.cs" />
     <Compile Include="Api\Features\ActionManager.cs" />
     <Compile Include="Api\Features\Spawn.cs" />
-    <Compile Include="Api\Features\ActiveCustomSetting.cs" />
     <Compile Include="Api\Features\CustomSetting.cs" />
     <Compile Include="Api\Features\Extensions\DictionaryExtension.cs" />
+    <Compile Include="Api\Features\Extensions\PlayerExtensions.cs" />
     <Compile Include="Api\Features\Extensions\StringExtensions.cs" />
+    <Compile Include="Api\Features\Extensions\ExiledSettingBaseExtensions.cs" />
     <Compile Include="Api\Features\Extensions\ListExtensions.cs" />
     <Compile Include="Api\Features\Setting.cs" />
     <Compile Include="Api\Features\SpawnData\SendOnTeamSpawn.cs" />
@@ -482,11 +488,16 @@
     <Compile Include="Api\Features\Yaml\YamlCustomSetting.cs" />
     <Compile Include="Api\Features\Yaml\YAMLSetting.cs" />
     <Compile Include="Api\Helpers\CustomSettingConverter.cs" />
+    <Compile Include="Api\Helpers\DynamicSettingUpdater.cs" />
     <Compile Include="Api\Helpers\MultiCustomDataHelper.cs" />
     <Compile Include="Api\Helpers\FileConfig.cs" />
+    <Compile Include="Api\Helpers\HttpManager.cs" />
     <Compile Include="Api\Helpers\LogEntry.cs" />
     <Compile Include="Api\Helpers\LogManager.cs" />
     <Compile Include="Api\Helpers\SSSHelper.cs" />
+    <Compile Include="Api\Helpers\VersionManager.cs" />
+    <Compile Include="Api\Helpers\VersionInfo.cs" />
+    <Compile Include="Api\Helpers\UpdateChecker.cs" />
     <Compile Include="Api\Interfaces\ICustomSetting.cs" />
     <Compile Include="Api\Interfaces\ISetting.cs" />
     <Compile Include="Api\Interfaces\ISpawn.cs" />
@@ -513,6 +524,7 @@
     <Compile Include="Intergrations\UCI.cs" />
     <Compile Include="Intergrations\UCR.cs" />
     <Compile Include="Plugin.cs" />
+    <Compile Include="Harmony\Patches\PreventDuplicateIdsPatch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -523,7 +535,6 @@
   <ItemGroup>
     <Folder Include="Api\Commands\User\" />
     <Folder Include="Api\Wrappers\" />
-    <Folder Include="Harmony\Patches\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

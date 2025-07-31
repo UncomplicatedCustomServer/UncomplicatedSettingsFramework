@@ -1,4 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using LabApi.Features.Wrappers;
+using MapGeneration;
+using PlayerRoles;
+using System.Collections.Generic;
+using System.Linq;
 using UncomplicatedSettingsFramework.Api.Enums;
 using UncomplicatedSettingsFramework.Api.Features.SpecificData;
 using UncomplicatedSettingsFramework.Api.Interfaces;
@@ -6,7 +10,7 @@ using UserSettings.ServerSpecific;
 
 namespace UncomplicatedSettingsFramework.Api.Helpers
 {
-    internal class CustomSettingConverter
+    public class CustomSettingConverter
     {
         public static ServerSpecificSettingBase[] ToServerSpecificSettings(ICustomSetting customSetting)
         {
@@ -30,11 +34,63 @@ namespace UncomplicatedSettingsFramework.Api.Helpers
                         break;
 
                     case SettingType.Dropdown:
-                        var dropdownData = (IDropdown)setting.CustomData;
+                        IDropdown dropdownData = setting.CustomData as IDropdown;
+                        string[] options = dropdownData.Contents.ToArray();
+                        if (dropdownData.DynamicContent != DynamicContentType.None)
+                        {
+                            switch (dropdownData.DynamicContent)
+                            {
+                                case DynamicContentType.Players:
+                                    options = Player.ReadyList.Select(p => p.Nickname).ToArray();
+                                    break;
+                                case DynamicContentType.Scps:
+                                    options = Player.ReadyList.Where(p => p.Role.GetTeam() == Team.SCPs).Select(p => p.Nickname).ToArray();
+                                    break;
+                                case DynamicContentType.ClassD:
+                                    options = Player.ReadyList.Where(p => p.Role.GetTeam() == Team.ClassD).Select(p => p.Nickname).ToArray();
+                                    break;
+                                case DynamicContentType.Scientists:
+                                    options = Player.ReadyList.Where(p => p.Role.GetTeam() == Team.Scientists).Select(p => p.Nickname).ToArray();
+                                    break;
+                                case DynamicContentType.Guards:
+                                    options = Player.ReadyList.Where(p => p.Role == RoleTypeId.FacilityGuard).Select(p => p.Nickname).ToArray();
+                                    break;
+                                case DynamicContentType.MTF:
+                                    options = Player.ReadyList.Where(p => p.Role.GetTeam() == Team.FoundationForces).Select(p => p.Nickname).ToArray();
+                                    break;
+                                case DynamicContentType.ChaosInsurgency:
+                                    options = Player.ReadyList.Where(p => p.Role.GetTeam() == Team.ChaosInsurgency).Select(p => p.Nickname).ToArray();
+                                    break;
+                                case DynamicContentType.DeadPlayers:
+                                    options = Player.ReadyList.Where(p => !p.IsAlive).Select(p => p.Nickname).ToArray();
+                                    break;
+                                case DynamicContentType.Roles:
+                                    options = System.Enum.GetNames(typeof(RoleTypeId));
+                                    break;
+                                case DynamicContentType.Teams:
+                                    options = System.Enum.GetNames(typeof(Team));
+                                    break;
+                                case DynamicContentType.Items:
+                                    options = System.Enum.GetNames(typeof(ItemType));
+                                    break;
+                                case DynamicContentType.Zones:
+                                    options = System.Enum.GetNames(typeof(FacilityZone));
+                                    break;
+                                case DynamicContentType.Rooms:
+                                    options = Room.List.Select(r => r.GameObject.name.ToString()).ToArray();
+                                    break;
+                                case DynamicContentType.Doors:
+                                    options = Door.List.Select(d => d.DoorName.ToString()).ToArray();
+                                    break;
+                                case DynamicContentType.Primitives:
+                                    options = AdminToy.List.Select(toy => toy.Base.name).ToArray();
+                                    break;
+                            }
+                        }
                         serverSetting = new SSDropdownSetting(
                             (int)dropdownData.Id,
                             dropdownData.Label,
-                            dropdownData.Contents.ToArray(),
+                            options,
                             dropdownData.DefaultContentSelected,
                             dropdownData.DropdownEntryType,
                             dropdownData.HintDescription

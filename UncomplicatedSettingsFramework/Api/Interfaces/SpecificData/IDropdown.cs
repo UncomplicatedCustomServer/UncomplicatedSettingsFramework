@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UncomplicatedSettingsFramework.Api.Enums;
 using UncomplicatedSettingsFramework.Api.Interfaces.SpecificData;
 
 using static UserSettings.ServerSpecific.SSDropdownSetting;
@@ -13,5 +14,6 @@ namespace UncomplicatedSettingsFramework.Api.Features.SpecificData
         public List<string> Contents { get; set; }
         public DropdownEntryType DropdownEntryType { get; set; }
         public int DefaultContentSelected { get; set; }
+        public DynamicContentType DynamicContent { get; set; }
     }
 }

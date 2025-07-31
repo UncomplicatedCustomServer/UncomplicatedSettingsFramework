@@ -56,16 +56,33 @@ namespace UncomplicatedSettingsFramework.Events
             if (foundSetting is null)
                 return;
 
-            if (settingBase is SSTwoButtonsSetting twoButtons)
+            if (settingBase is SSDropdownSetting dropdown)
+            {
+                if (foundSetting.Actions.TryGetValue("OnSelected", out List<string> actions))
+                {
+                    List<string> processedActions = new List<string>();
+                    string dynamicPlaceholder = $"{{dropdown.{dropdown.SettingId}.selection}}";
+                    string genericPlaceholder = "{dropdown.selection}";
+
+                    foreach (string action in actions)
+                    {
+                        string processedAction = action.Replace(dynamicPlaceholder, dropdown.SyncSelectionText).Replace(genericPlaceholder, dropdown.SyncSelectionText);
+                        processedActions.Add(processedAction);
+                    }
+                    ActionManager.ExecuteActions(processedActions, player);
+                }
+            }
+
+            else if (settingBase is SSTwoButtonsSetting twoButtons)
             {
                 List<string> actionsToExecute = new List<string>();
-                
+
                 if (twoButtons.SyncIsA && foundSetting.Actions.TryGetValue("OnPressedA", out List<string> actionsA))
                     actionsToExecute.AddRange(actionsA);
-                    
+
                 if (twoButtons.SyncIsB && foundSetting.Actions.TryGetValue("OnPressedB", out List<string> actionsB))
                     actionsToExecute.AddRange(actionsB);
-                    
+
                 if (actionsToExecute.Any())
                     ActionManager.ExecuteActions(actionsToExecute, player);
             }

@@ -5,9 +5,12 @@ using LabApi.Loader.Features.Plugins.Enums;
 using System;
 using System.IO;
 using System.Reflection;
+using UncomplicatedSettingsFramework.Api.Features;
+using UncomplicatedSettingsFramework.Api.Features.Extensions;
 using UncomplicatedSettingsFramework.Api.Features.Helper;
+using UncomplicatedSettingsFramework.Api.Helper;
+using UncomplicatedSettingsFramework.Api.Helpers;
 using UncomplicatedSettingsFramework.Events;
-using UncomplicatedSettingsFramework.Integrations;
 
 namespace UncomplicatedSettingsFramework
 {
@@ -31,20 +34,36 @@ namespace UncomplicatedSettingsFramework
 
         internal HarmonyLib.Harmony _harmony;
 
+        internal DynamicSettingUpdater DynamicUpdater;
+
+        internal Spawn spawn;
+        
+        internal static HttpManager HttpManager;
+
         internal FileConfig FileConfig;
 
         public override void Enable()
         {
+            Instance = this;
+            
+            HttpManager = new("usf");
+            DynamicUpdater = new();
+            DynamicUpdater.Start();
+            PlayerExtensions.Register();
             SettingHandler.Register();
+            spawn = new();
+            spawn.Start();
             PlayerHandler.Register();
             ServerHandler.Register();
-            Instance = this;
+            PlayerExtensions.PlayerKills.Clear();
+            HttpManager.RegisterEvents();
             FileConfig = new();
             if (!File.Exists(Path.Combine(ConfigurationLoader.GetConfigPath(Instance, "UncomplicatedSettingsFramework"), "UncomplicatedSettingsFramework", ".nohttp")))
 
             _harmony = new($"com.ucs.usf_labapi-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
             _harmony.PatchAll();
 
+            LogManager.History.Clear();
             FileConfig.LoadSettings(loadExamples: true);
             FileConfig.LoadSettings(Server.Port.ToString());
             FileConfig.LoadAll();
@@ -53,13 +72,19 @@ namespace UncomplicatedSettingsFramework
 
         public override void Disable()
         {
+            DynamicUpdater?.Stop();
+            PlayerExtensions.Unregister();
             SettingHandler.Unregister();
             PlayerHandler.Unregister();
             ServerHandler.Unregister();
+            HttpManager.UnregisterEvents();
+            spawn.Stop();
             _harmony.UnpatchAll();
             _harmony = null;
             Instance = null;
+            spawn = null;
             FileConfig = null;
+            DynamicUpdater = null;
         }
     }
 }

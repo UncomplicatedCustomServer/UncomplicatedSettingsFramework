@@ -19,43 +19,43 @@ namespace UncomplicatedSettingsFramework.Api
         /// <summary>
         /// Check if a <see cref="ICustomSetting"/> is valid and can be registered
         /// </summary>
-        /// <param name="item">The custom setting item to validate</param>
+        /// <param name="setting">The custom setting setting to validate</param>
         /// <param name="error">Output parameter containing error details if validation fails</param>
         /// <returns><see cref="bool"/> <see langword="true"/> if valid, <see langword="false"/> if there's any problem</returns>
-        public static bool CustomSettingValidator(ICustomSetting item, out string error)
+        public static bool CustomSettingValidator(ICustomSetting setting, out string error)
         {
             error = string.Empty;
 
-            if (item == null)
+            if (setting == null)
             {
-                error = "Custom setting item cannot be null.";
+                error = "Custom setting setting cannot be null.";
                 return false;
             }
 
-            if (CustomSetting.CustomSettings.ContainsKey(item.Id))
+            if (CustomSetting.CustomSettings.ContainsKey(setting.Id))
             {
-                uint oldId = item.Id;
+                uint oldId = setting.Id;
                 uint newId = CustomSetting.GetFirstFreeId(1);
-                item.Id = newId;
-                LogManager.Warn($"{item.Name} - ID {oldId} is already in use. Assigning new ID {newId}.");
-                CustomSetting.Register(item);
+                setting.Id = newId;
+                LogManager.Warn($"{setting.Name} - ID {oldId} is already in use. Assigning new ID {newId}.");
+                CustomSetting.Register(setting);
             }
 
-            if (item.Settings == null)
+            if (setting.Settings == null)
             {
                 error = "Settings collection cannot be null.";
                 return false;
             }
 
-            foreach (Setting setting in item.Settings)
+            foreach (Setting setting1 in setting.Settings)
             {
-                if (setting?.CustomData == null)
+                if (setting1?.CustomData == null)
                 {
                     error = "Setting or CustomData cannot be null.";
                     return false;
                 }
 
-                if (!IsValidSettingType(setting, out string validationError))
+                if (!IsValidSettingType(setting1, out string validationError))
                 {
                     error = validationError;
                     return false;
@@ -108,31 +108,31 @@ namespace UncomplicatedSettingsFramework.Api
         /// Check if a <see cref="ICustomSetting"/> is valid and can be registered.
         /// Does not return the error as text!
         /// </summary>
-        /// <param name="item"></param>
+        /// <param name="setting"></param>
         /// <returns><see cref="bool"/> <see langword="false"/> if there's any problem.</returns>
-        public static bool CustomSettingValidator(ICustomSetting item)
+        public static bool CustomSettingValidator(ICustomSetting setting)
         {
-            return CustomSettingValidator(item, out _);
+            return CustomSettingValidator(setting, out _);
         }
 
         /// <summary>
         /// Try to get a <see cref="ICustomSetting"/> by it's <see cref="ICustomSetting.Id"/>
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="item"></param>
-        /// <returns><see cref="bool"/> <see langword="true"/> if the item exists and <paramref name="item"/> is not <see langword="null"/> or <see langword="default"/></returns>
-        public static bool TryGetCustomSetting(uint id, out ICustomSetting item) => CustomSetting.CustomSettings.TryGetValue(id, out item);
+        /// <param name="setting"></param>
+        /// <returns><see cref="bool"/> <see langword="true"/> if the setting exists and <paramref name="setting"/> is not <see langword="null"/> or <see langword="default"/></returns>
+        public static bool TryGetCustomSetting(uint id, out ICustomSetting setting) => CustomSetting.CustomSettings.TryGetValue(id, out setting);
 
         /// <summary>
         /// Try to get a <see cref="ICustomSetting"/> by it's <see cref="ICustomSetting.Name"/>
         /// </summary>
         /// <param name="Name"></param>
-        /// <param name="item"></param>
-        /// <returns><see cref="bool"/> <see langword="true"/> if the item exists and <paramref name="item"/> is not <see langword="null"/> or <see langword="default"/></returns>
-        public static bool TryGetCustomSettingByName(string Name, out ICustomSetting item)
+        /// <param name="setting"></param>
+        /// <returns><see cref="bool"/> <see langword="true"/> if the setting exists and <paramref name="setting"/> is not <see langword="null"/> or <see langword="default"/></returns>
+        public static bool TryGetCustomSettingByName(string Name, out ICustomSetting setting)
         {
-            item = CustomSetting.List.FirstOrDefault(i => i.Name == Name);
-            return item != null;
+            setting = CustomSetting.List.FirstOrDefault(i => i.Name == Name);
+            return setting != null;
         }
 
         /// <summary>

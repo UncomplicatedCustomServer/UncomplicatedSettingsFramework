@@ -10,8 +10,12 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
+using UncomplicatedSettingsFramework.Api.Features.Helper;
+using UncomplicatedSettingsFramework.Api.Helpers;
 using UncomplicatedSettingsFramework.Integrations;
 using UnityEngine;
+using UserSettings.ServerSpecific;
 using Utils.Networking;
 
 namespace UncomplicatedSettingsFramework.Api.Features
@@ -26,7 +30,7 @@ namespace UncomplicatedSettingsFramework.Api.Features
 
         private static void ParseAndExecuteAction(string action, Player player)
         {
-            string processedAction = ResolvePlaceholders(action, player);
+            string processedAction = ResolveDynamicPlaceholders(action, player);
 
             if (processedAction.Trim().ToUpper().StartsWith("IF "))
             {
@@ -251,22 +255,16 @@ namespace UncomplicatedSettingsFramework.Api.Features
 
         private static void ExecuteConditionalAction(string action, Player player)
         {
-            string[] ifThenParts = action.Split(new[] { " THEN " }, 2, StringSplitOptions.None);
-            if (ifThenParts.Length != 2) return;
+            string[] ifThenParts = Regex.Split(action, @"\s+(THEN|ELSE)\s+", RegexOptions.IgnoreCase);
+            if (ifThenParts.Length < 3) return;
 
             string condition = ifThenParts[0].Substring(3).Trim();
-            string thenAction;
+            string thenAction = ifThenParts[2].Trim();
             string elseAction = null;
 
-            string[] elseParts = ifThenParts[1].Split(new[] { " ELSE " }, 2, StringSplitOptions.None);
-            if (elseParts.Length == 2)
+            if (ifThenParts.Length >= 5 && ifThenParts[3].Equals("ELSE", StringComparison.OrdinalIgnoreCase))
             {
-                thenAction = elseParts[0].Trim();
-                elseAction = elseParts[1].Trim();
-            }
-            else
-            {
-                thenAction = ifThenParts[1].Trim();
+                elseAction = ifThenParts[4].Trim();
             }
 
             if (EvaluateCondition(condition))
@@ -280,6 +278,31 @@ namespace UncomplicatedSettingsFramework.Api.Features
         }
 
         private static bool EvaluateCondition(string condition)
+        {
+            string[] orParts = condition.Split(new[] { " OR " }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (string orPart in orParts)
+            {
+                string[] andParts = orPart.Split(new[] { " AND " }, StringSplitOptions.RemoveEmptyEntries);
+                bool isAndBlockTrue = true;
+                foreach (string andPart in andParts)
+                {
+                    if (!EvaluateSingleCondition(andPart.Trim()))
+                    {
+                        isAndBlockTrue = false;
+                        break;
+                    }
+                }
+
+                if (isAndBlockTrue)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool EvaluateSingleCondition(string condition)
         {
             string[] parts = condition.Split(new[] { ' ' }, 3);
             if (parts.Length != 3) return false;
@@ -312,51 +335,107 @@ namespace UncomplicatedSettingsFramework.Api.Features
             };
         }
 
-        private static string ResolvePlaceholders(string text, Player player)
+        private static string ResolveDynamicPlaceholders(string actionText, Player player)
         {
-            System.Random rand = new();
-            Player randomPlayer = Player.ReadyList.ElementAt(rand.Next(Player.ReadyList.Count()));
-            string randomPlayerId = randomPlayer.PlayerId.ToString();
+            return Regex.Replace(actionText, @"\{(?<type>\w+)\.(?<id>\d+)\.(?<prop>\w+)\}", match =>
+            {
+                string type = match.Groups["type"].Value.ToLower();
+                string id = match.Groups["id"].Value;
+                string prop = match.Groups["prop"].Value.Trim().ToLower();
 
-            return text
-                .Replace("{player.name}", player.Nickname)
-                .Replace("{player.id}", player.PlayerId.ToString())
-                .Replace("{random.player.id}", randomPlayerId)
-                .Replace("{player.position}", player.Position.ToString("F2").Replace(",", ""))
-                .Replace("{player.role}", player.Role.ToString())
-                .Replace("{player.health}", player.Health.ToString(CultureInfo.InvariantCulture))
-                .Replace("{player.zone}", player.Zone.ToString())
-                .Replace("{player.rotation}", player.Rotation.ToString().Replace(",", ""))
-                .Replace("{player.userid}", player.UserId)
-                .Replace("{player.team}", player.Role.GetTeam().ToString())
-                .Replace("{player.maxhealth}", player.MaxHealth.ToString(CultureInfo.InvariantCulture))
-                .Replace("{player.stamina}", player.StaminaRemaining.ToString("F2", CultureInfo.InvariantCulture))
-                .Replace("{player.group}", player.GroupName ?? "None")
-                .Replace("{player.rankcolor}", player.GroupColor ?? "None")
-                .Replace("{player.rank}", player.UserGroup.Name ?? "None")
-                .Replace("{player.rankcolor}", player.UserGroup.BadgeColor ?? "None")
-                .Replace("{server.name}", Server.ServerListName)
-                .Replace("{server.playercount}", Server.PlayerCount.ToString())
-                .Replace("{server.maxplayers}", Server.MaxPlayers.ToString())
-                .Replace("{round.time}", Round.Duration.ToString(@"mm\:ss"))
-                .Replace("{datetime.now}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"))
-                .Replace("{date}", DateTime.Now.ToString("yyyy-MM-dd"))
-                .Replace("{time}", DateTime.Now.ToString("HH:mm:ss"))
-                .Replace("{player.ip}", player.IpAddress)
-                .Replace("{player.address}", player.IpAddress)
-                .Replace("{player.ipaddress}", player.IpAddress)
-                .Replace("{player.isalive}", player.IsAlive.ToString())
-                .Replace("{player.isdead}", (!player.IsAlive).ToString())
-                .Replace("{player.items}", string.Join(", ", player.Items.Select(item => item.ToString())))
-                .Replace("{player.itemcount}", player.Items.Count().ToString())
-                .Replace("{player.ammo}", player.Ammo.ToString())
-                .Replace("{server.port}", Server.Port.ToString())
-                .Replace("{server.ip}", Server.IpAddress)
-                .Replace("{server.address}", Server.IpAddress)
-                .Replace("{server.ipaddress}", Server.IpAddress)
-                .Replace("{server.tps}", Server.Tps.ToString("F1"))
-                .Replace("{round.escapees}", (Round.EscapedClassD + Round.EscapedScientists).ToString())
-                .Replace("{round.scps}", Round.SurvivingSCPs.ToString());
+                LogManager.Debug($"-- Resolving Placeholder: {match.Value} --");
+                LogManager.Debug($"Type: '{type}', ID: '{id}', Prop: '{prop}'");
+
+                switch (type)
+                {
+                    case "dropdown" when int.TryParse(id, out int dropdownId) && prop == "selection":
+                        {
+                            SSDropdownSetting dropdown = SSSHelper.GetUserSetting<SSDropdownSetting>(player.ReferenceHub, dropdownId);
+                            if (dropdown == null)
+                            {
+                                LogManager.Warn($"Dropdown with ID {dropdownId} not found for player {player.Nickname}.");
+                                return match.Value;
+                            }
+                            string selection = dropdown.Options[dropdown.SyncSelectionIndexRaw];
+                            LogManager.Debug($"Dropdown selection for ID {dropdownId} is: '{selection}'");
+                            return selection;
+                        }
+
+                    case "player":
+                        return GetPlayerPlaceholder(player, id);
+                    case "server":
+                        return GetServerPlaceholder(id);
+                    case "round":
+                        return GetRoundPlaceholder(id);
+                    case "datetime":
+                        return GetDateTimePlaceholder(id);
+                    default:
+                        LogManager.Warn($"Unrecognized or incomplete placeholder: {match.Value}");
+                        return match.Value;
+                }
+            });
+        }
+        private static string GetPlayerPlaceholder(Player player, string property)
+        {
+            switch (property)
+            {
+                case "name": return player.Nickname;
+                case "id": return player.PlayerId.ToString();
+                case "position": return player.Position.ToString("F2").Replace(",", "");
+                case "role": return player.Role.ToString();
+                case "health": return player.Health.ToString(CultureInfo.InvariantCulture);
+                case "zone": return player.Zone.ToString();
+                case "rotation": return player.Rotation.ToString().Replace(",", "");
+                case "userid": return player.UserId;
+                case "team": return player.Role.GetTeam().ToString();
+                case "maxhealth": return player.MaxHealth.ToString(CultureInfo.InvariantCulture);
+                case "stamina": return player.StaminaRemaining.ToString("F2", CultureInfo.InvariantCulture);
+                case "group": return player.GroupName ?? "None";
+                case "rankcolor": return player.GroupColor ?? "None";
+                case "rank": return player.UserGroup.Name ?? "None";
+                case "ip": case "address": case "ipaddress": return player.IpAddress;
+                case "isalive": return player.IsAlive.ToString();
+                case "isdead": return (!player.IsAlive).ToString();
+                case "items": return string.Join(", ", player.Items.Select(item => item.Type.ToString()));
+                case "itemcount": return player.Items.Count().ToString();
+                case "ammo": return player.Ammo.ToString();
+                default: return $"{{player.{property}}}";
+            }
+        }
+
+        private static string GetServerPlaceholder(string property)
+        {
+            switch (property)
+            {
+                case "name": return Server.ServerListName;
+                case "playercount": return Server.PlayerCount.ToString();
+                case "maxplayers": return Server.MaxPlayers.ToString();
+                case "port": return Server.Port.ToString();
+                case "ip": case "address": case "ipaddress": return Server.IpAddress;
+                case "tps": return Server.Tps.ToString("F1");
+                default: return $"{{server.{property}}}";
+            }
+        }
+
+        private static string GetRoundPlaceholder(string property)
+        {
+            switch (property)
+            {
+                case "time": return Round.Duration.ToString(@"mm\:ss");
+                case "escapees": return (Round.EscapedClassD + Round.EscapedScientists).ToString();
+                case "scps": return Round.SurvivingSCPs.ToString();
+                default: return $"{{round.{property}}}";
+            }
+        }
+        private static string GetDateTimePlaceholder(string property)
+        {
+            switch (property)
+            {
+                case "now": return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                case "date": return DateTime.Now.ToString("yyyy-MM-dd");
+                case "time": return DateTime.Now.ToString("HH:mm:ss");
+                default: return $"{{datetime.{property}}}";
+            }
         }
     }
 }

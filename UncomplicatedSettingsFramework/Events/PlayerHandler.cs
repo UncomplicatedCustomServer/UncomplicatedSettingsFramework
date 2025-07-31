@@ -4,6 +4,7 @@ using LabApi.Features.Permissions;
 using LabApi.Features.Wrappers;
 using PlayerRoles.FirstPersonControl;
 using UncomplicatedSettingsFramework.Api.Features;
+using UncomplicatedSettingsFramework.Api.Features.Extensions;
 using UncomplicatedSettingsFramework.Api.Features.Helper;
 using UncomplicatedSettingsFramework.Api.Helpers;
 using UncomplicatedSettingsFramework.Api.Interfaces;
@@ -71,6 +72,11 @@ namespace UncomplicatedSettingsFramework.Events
                 {
                     ServerSpecificSettingBase[] serverSettings = CustomSettingConverter.ToServerSpecificSettings(customSetting);
                     SSSHelper.RemoveSettingsFromUser(ev.Player.ReferenceHub, serverSettings);
+                }
+                if (customSetting.SpawnData.Any(s => s.RequiredKills >= ev.Attacker.Kills()) && string.IsNullOrEmpty(customSetting.RequiredPermission) || ev.Attacker.HasPermissions(customSetting.RequiredPermission))
+                {
+                    LogManager.Debug($"{ev.Attacker.Nickname} has reached {ev.Attacker.Kills()} sending {customSetting.Name}");
+                    CustomSetting.RegisterCustomSettingsForPlayer(ev.Player.ReferenceHub, customSetting);
                 }
             }
         }

@@ -44,7 +44,6 @@ namespace UncomplicatedSettingsFramework.Api.Commands.Admin
             }
 
             FileConfig FileConfig = Plugin.Instance.FileConfig;
-            ActiveCustomSetting.List.Clear();
             CustomSetting.List.Clear();
             CustomSetting.UnregisteredList.Clear();
 

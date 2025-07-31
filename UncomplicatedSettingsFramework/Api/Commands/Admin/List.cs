@@ -24,15 +24,15 @@ namespace UncomplicatedSettingsFramework.Api.Commands.Admin
         {
             response = "\nList of every registered Custom Setting:\n";
 
-            foreach (ICustomSetting Item in CustomSetting.List.OrderBy(item => item.Id))
-                response += $"<size=23><color=#00ff00>✔</color></size> <size=21>[{Item.Id}]</size> - <color=green>{Item.Name}</color></size>\n";
+            foreach (ICustomSetting setting in CustomSetting.List.OrderBy(setting => setting.Id))
+                response += $"<size=23><color=#00ff00>✔</color></size> <size=21>[{setting.Id}]</size> - <color=green>{setting.Name}</color></size>\n";
 
             if (CustomSetting.UnregisteredList.Count > 0)
             {
                 response += $"\nList of every unregistered Custom Setting:\n";
 
-                foreach (ICustomSetting Item in CustomSetting.UnregisteredList.OrderBy(item => item.Id))
-                    response += $"<size=23><color=#ff0000>❌</color></size> <size=21>[{Item.Id}]</size> - <color=red>{Item.Name}</color></size>\n";
+                foreach (ICustomSetting setting in CustomSetting.UnregisteredList.OrderBy(setting => setting.Id))
+                    response += $"<size=23><color=#ff0000>❌</color></size> <size=21>[{setting.Id}]</size> - <color=red>{setting.Name}</color></size>\n";
             }
 
             response += $"\n<color=#00ff00>[✔]</color> {CustomSetting.List.Count} Registered CustomSettings.\n";

@@ -1,8 +1,7 @@
 using System.Collections.Generic;
+using MapGeneration;
 using PlayerRoles;
-using UncomplicatedSettingsFramework.Api.Enums;
 using UncomplicatedSettingsFramework.Api.Features.SpawnData;
-using UncomplicatedSettingsFramework.Api.Interfaces.SpecificData;
 
 namespace UncomplicatedSettingsFramework.Api.Interfaces
 {
@@ -12,6 +11,9 @@ namespace UncomplicatedSettingsFramework.Api.Interfaces
         public bool? SendOnJoin { get; set; }
         public bool? SendToAll { get; set; }
         public bool? RemoveOnDeath { get; set; }
+        public int? MinPlayersRequired { get; set; }
+        public List<FacilityZone>? AllowedZones { get; set; }
+        public int? RequiredKills { get; set; }
         public List<RoleTypeId> AllowedRoles { get; set; }
     }
 }

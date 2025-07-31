@@ -1,23 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using UncomplicatedSettingsFramework.Api.Features.Extensions;
 using UncomplicatedSettingsFramework.Api.Features.Helper;
 using UserSettings.ServerSpecific;
-using LabApi.Features.Wrappers;
-using Mirror;
-using UncomplicatedSettingsFramework.Api.Features.Extensions;
 
 namespace UncomplicatedSettingsFramework.Api.Helpers
 {
-    public class SSSHelper
+    public static class SSSHelper
     {
-        public static void AddOrUpdateUserSetting(ReferenceHub user, ServerSpecificSettingBase setting)
+        /// <summary>
+        /// Adds or replaces a single setting for this user.
+        /// </summary>
+        public static void AddOrUpdateUserSetting(ReferenceHub user, object settingOrWrapper)
         {
+            ServerSpecificSettingBase setting = settingOrWrapper.ToServerSpecific();
             List<ServerSpecificSettingBase> userSettings = ServerSpecificSettingsSync.ReceivedUserSettings.GetOrAddNew(user);
 
             for (int i = 0; i < userSettings.Count; i++)
             {
-                if (userSettings[i].SettingId == setting.SettingId && userSettings[i].GetType() == setting.GetType())
+                if (userSettings[i].SettingId == setting.SettingId
+                    && userSettings[i].GetType() == setting.GetType())
                 {
                     userSettings[i] = setting;
                     return;
@@ -105,52 +108,76 @@ namespace UncomplicatedSettingsFramework.Api.Helpers
             return copy;
         }
 
-        public static void SendSettingsToUser(ReferenceHub user, ServerSpecificSettingBase[] settings, ServerSpecificSettingBase[]? settingsToRemove)
+        /// <summary>
+        /// Send a batch of settings (and optionally removals) for a user.
+        /// </summary>
+        public static void SendSettingsToUser(ReferenceHub user, object[] settings, object[] settingsToRemove = null)
         {
+            ServerSpecificSettingBase[] toAdd = settings.Select(o => o.ToServerSpecific()).ToArray();
             List<ServerSpecificSettingBase> userSettings = ServerSpecificSettingsSync.ReceivedUserSettings.GetOrAddNew(user);
 
             if (settingsToRemove != null)
-                RemoveSettingsFromUser(user, settingsToRemove);
-
-            foreach (ServerSpecificSettingBase setting in settings)
             {
-                ServerSpecificSettingBase settingCopy = CreateSettingCopy(setting);
-                AddOrUpdateUserSetting(user, settingCopy);
+                ServerSpecificSettingBase[] toRem = settingsToRemove.Select(o => o.ToServerSpecific()).ToArray();
+                RemoveSettingsFromUser(user, toRem);
             }
 
-            ServerSpecificSettingsSync.DefinedSettings = userSettings.ToArray();
-            SSSEntriesPack pack = new SSSEntriesPack(userSettings.ToArray(), ServerSpecificSettingsSync.Version);
+            foreach (ServerSpecificSettingBase s in toAdd)
+            {
+                ServerSpecificSettingBase copy = CreateSettingCopy(s);
+                AddOrUpdateUserSetting(user, copy);
+            }
+
+            ServerSpecificSettingBase[] existing = ServerSpecificSettingsSync.DefinedSettings ?? Array.Empty<ServerSpecificSettingBase>();
+            ServerSpecificSettingBase[] merged = existing.Select(e => userSettings.FirstOrDefault(u => u.SettingId == e.SettingId && u.GetType() == e.GetType()) ?? e).Concat(userSettings.Where(u => !existing.Any(e => e.SettingId == u.SettingId && e.GetType() == u.GetType()))).ToArray();
+
+            ServerSpecificSettingsSync.DefinedSettings = merged;
+
+            SSSEntriesPack pack = new SSSEntriesPack(merged, ServerSpecificSettingsSync.Version);
             user.connectionToClient.Send(pack);
         }
 
-        public static void RemoveSettingsFromUser(ReferenceHub user, ServerSpecificSettingBase[] settingsToRemove)
+        /// <summary>
+        /// Remove a batch of settings from a user.
+        /// </summary>
+        public static void RemoveSettingsFromUser(ReferenceHub user, object[] settingsToRemove)
+        {
+            ServerSpecificSettingBase[] toRem = settingsToRemove.Select(o => o.ToServerSpecific()).ToArray();
+
+            if (!ServerSpecificSettingsSync.ReceivedUserSettings.TryGetValue(user, out List<ServerSpecificSettingBase> userSettings))
+                return;
+
+            var keySet = new HashSet<(int, Type)>(toRem.Select(s => (s.SettingId, s.GetType())));
+
+            userSettings.RemoveAll(s => keySet.Contains((s.SettingId, s.GetType())));
+
+            ServerSpecificSettingBase[] existing = ServerSpecificSettingsSync.DefinedSettings ?? Array.Empty<ServerSpecificSettingBase>();
+            ServerSpecificSettingBase[] merged = existing.Where(e => !keySet.Contains((e.SettingId, e.GetType()))).Concat(userSettings).ToArray();
+
+            ServerSpecificSettingsSync.DefinedSettings = merged;
+
+            SSSEntriesPack pack = new SSSEntriesPack(merged, ServerSpecificSettingsSync.Version);
+            user.connectionToClient.Send(pack);
+        }
+
+        /// <summary>
+        /// Clear *all* settings for this user.
+        /// </summary>
+        public static void ClearAllUserSettings(ReferenceHub user)
         {
             if (!ServerSpecificSettingsSync.ReceivedUserSettings.TryGetValue(user, out List<ServerSpecificSettingBase> userSettings))
                 return;
 
-            HashSet<(int SettingId, Type SettingType)> settingsToRemoveSet = new HashSet<(int, Type)>();
-            foreach (ServerSpecificSettingBase setting in settingsToRemove)
-            {
-                LogManager.Debug($"Removing {setting.Label}, {setting.SettingId}");
-                settingsToRemoveSet.Add((setting.SettingId, setting.GetType()));
-            }
+            userSettings.Clear();
+            ServerSpecificSettingsSync.ReceivedUserSettings[user] = new List<ServerSpecificSettingBase>();
 
-            userSettings.RemoveAll(existingSetting => settingsToRemoveSet.Contains((existingSetting.SettingId, existingSetting.GetType())));
+            ServerSpecificSettingBase[] existing = ServerSpecificSettingsSync.DefinedSettings ?? Array.Empty<ServerSpecificSettingBase>();
+            ServerSpecificSettingBase[] merged = existing.Where(e => !userSettings.Any(u => u.SettingId == e.SettingId && u.GetType() == e.GetType())).ToArray();
 
-            ServerSpecificSettingsSync.DefinedSettings = userSettings.ToArray();
-            SSSEntriesPack pack = new SSSEntriesPack(userSettings.ToArray(), ServerSpecificSettingsSync.Version);
+            ServerSpecificSettingsSync.DefinedSettings = merged;
+
+            SSSEntriesPack pack = new SSSEntriesPack(merged, ServerSpecificSettingsSync.Version);
             user.connectionToClient.Send(pack);
-        }
-
-        public static void ClearAllUserSettings(ReferenceHub user)
-        {
-            if (ServerSpecificSettingsSync.ReceivedUserSettings.TryGetValue(user, out List<ServerSpecificSettingBase> userSettings))
-            {
-                userSettings.Clear();
-                ServerSpecificSettingsSync.ReceivedUserSettings[user] = new List<ServerSpecificSettingBase>();
-                SSSEntriesPack pack = new SSSEntriesPack(new ServerSpecificSettingBase[0], ServerSpecificSettingsSync.Version);
-                user.connectionToClient.Send(pack);
-            }
         }
 
         public static bool HasUserSetting(ReferenceHub user, int settingId, Type settingType)
@@ -159,6 +186,14 @@ namespace UncomplicatedSettingsFramework.Api.Helpers
                 return false;
 
             return userSettings.Any(setting => setting.SettingId == settingId && setting.GetType() == settingType);
+        }
+
+        public static bool HasUserSetting(ReferenceHub user, int settingId)
+        {
+            if (!ServerSpecificSettingsSync.ReceivedUserSettings.TryGetValue(user, out List<ServerSpecificSettingBase> userSettings))
+                return false;
+                
+            return userSettings.Any(setting => setting.SettingId == settingId);
         }
 
         /// <summary>
@@ -173,9 +208,11 @@ namespace UncomplicatedSettingsFramework.Api.Helpers
             if (!ServerSpecificSettingsSync.ReceivedUserSettings.TryGetValue(user, out List<ServerSpecificSettingBase> userSettings))
                 return;
 
-            var setting = userSettings.FirstOrDefault(s => s.SettingId == settingId && s.GetType() == settingType);
+            LogManager.Debug($"Checking Setting {userSettings.ToString()}");
+            ServerSpecificSettingBase setting = userSettings.FirstOrDefault(s => s.SettingId == settingId && s.GetType() == settingType);
             if (setting != null)
             {
+                LogManager.Debug($"Updating setting {setting.Label} ({setting.SettingId}) for user {user.nicknameSync.MyNick}");
                 updateAction(setting);
                 ServerSpecificSettingsSync.DefinedSettings = userSettings.ToArray();
                 SSSEntriesPack pack = new SSSEntriesPack(userSettings.ToArray(), ServerSpecificSettingsSync.Version);
@@ -192,10 +229,12 @@ namespace UncomplicatedSettingsFramework.Api.Helpers
         /// <returns></returns>
         public static T GetUserSetting<T>(ReferenceHub user, int settingId) where T : ServerSpecificSettingBase
         {
-            if (!ServerSpecificSettingsSync.ReceivedUserSettings.TryGetValue(user, out List<ServerSpecificSettingBase> userSettings))
-                return null;
+            if (ServerSpecificSettingsSync.TryGetSettingOfUser<T>(user, settingId, out T result))
+            {
+                return result;
+            }
 
-            return userSettings.FirstOrDefault(s => s.SettingId == settingId && s is T) as T;
+            return null;
         }
     }
 }

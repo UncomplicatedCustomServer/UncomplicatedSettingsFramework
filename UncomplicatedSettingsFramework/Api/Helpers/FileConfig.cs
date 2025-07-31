@@ -109,9 +109,9 @@ namespace UncomplicatedSettingsFramework.Api.Features.Helper
 
         public void LoadAll(string localDir = "")
         {
-            LoadAction((YAMLCustomSetting Item) =>
+            LoadAction((YAMLCustomSetting setting) =>
             {
-                CustomSetting.Register(YAMLCaster.ConvertToCustomSetting(Item));
+                CustomSetting.Register(YAMLCaster.ConvertToCustomSetting(setting));
             }, localDir);
         }
 
@@ -131,9 +131,9 @@ namespace UncomplicatedSettingsFramework.Api.Features.Helper
 
                     try
                     {
-                        YAMLCustomSetting Item = LabApi.Loader.Features.Yaml.YamlConfigParser.Deserializer.Deserialize<YAMLCustomSetting>(fileContent);
-                        LogManager.Debug($"Proposed to the registerer the external item {Item.Id} [{Item.Name}] from file:\n{FileName}");
-                        action(Item);
+                        YAMLCustomSetting setting = LabApi.Loader.Features.Yaml.YamlConfigParser.Deserializer.Deserialize<YAMLCustomSetting>(fileContent);
+                        LogManager.Debug($"Proposed to the registerer the external setting {setting.Id} [{setting.Name}] from file:\n{FileName}");
+                        action(setting);
                     }
                     catch (YamlException yamlEx)
                     {

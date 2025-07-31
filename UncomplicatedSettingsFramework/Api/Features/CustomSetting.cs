@@ -27,55 +27,60 @@ namespace UncomplicatedSettingsFramework.Api.Features
         /// <summary>
         /// Register a new <see cref="ICustomSetting"/> inside the plugin
         /// </summary>
-        /// <param name="item"></param>
-        public static void Register(ICustomSetting item)
+        /// <param name="setting"></param>
+        public static void Register(ICustomSetting setting)
         {
-            if (!Utilities.CustomSettingValidator(item, out string error))
+            if (!Utilities.CustomSettingValidator(setting, out string error))
             {
-                LogManager.Warn($"Unable to register the ICustomSetting with the Id {item.Id} and name '{item.Name}':\n{error}\nError code: 0x029");
-                UnregisteredCustomSettings.TryAdd(item.Id, item);
+                LogManager.Warn($"Unable to register the ICustomSetting with the Id {setting.Id} and name '{setting.Name}':\n{error}\nError code: 0x029");
+                UnregisteredCustomSettings.TryAdd(setting.Id, setting);
                 return;
             }
-            CustomSettings.TryAdd(item.Id, item);
-            LogManager.Info($"Successfully registered ICustomSetting '{item.Name}' (Id: {item.Id}) into the plugin!");
+            CustomSettings.TryAdd(setting.Id, setting);
+            LogManager.Info($"Successfully registered ICustomSetting '{setting.Name}' (Id: {setting.Id}) into the plugin!");
         }
 
         /// <summary>
         /// Unregister a <see cref="ICustomSetting"/> from the plugin by its class
         /// </summary>
-        /// <param name="item"></param>
-        public static void Unregister(ICustomSetting item) => Unregister(item.Id);
+        /// <param name="setting"></param>
+        public static void Unregister(ICustomSetting setting) => Unregister(setting.Id);
 
         /// <summary>
         /// Unregister a <see cref="ICustomSetting"/> from the plugin by its Id
         /// </summary>
-        /// <param name="item"></param>
-        public static void Unregister(uint item)
+        /// <param name="setting"></param>
+        public static void Unregister(uint setting)
         {
-            if (CustomSettings.ContainsKey(item) || UnregisteredCustomSettings.ContainsKey(item))
+            if (CustomSettings.ContainsKey(setting) || UnregisteredCustomSettings.ContainsKey(setting))
             {
-                CustomSettings.Remove(item);
-                UnregisteredCustomSettings.Remove(item);
+                CustomSettings.Remove(setting);
+                UnregisteredCustomSettings.Remove(setting);
             }
         }
 
         public static void RegisterCustomSettingsForPlayer(ReferenceHub user, ICustomSetting customSetting)
         {
-            List<ServerSpecificSettingBase> allServerSettings = new List<ServerSpecificSettingBase>();
-            ServerSpecificSettingBase[] serverSettings = CustomSettingConverter.ToServerSpecificSettings(customSetting);
-            allServerSettings.AddRange(serverSettings);
-
-            SSSHelper.SendSettingsToUser(user, allServerSettings.ToArray(), null);
+            ServerSpecificSettingBase[] settings = PrepareCustomSettings(customSetting);
+            if (settings != null)
+                SSSHelper.SendSettingsToUser(user, settings, null);
         }
 
         public static void RegisterCustomSettingsAllPlayers(ICustomSetting customSetting)
         {
-            List<ServerSpecificSettingBase> allServerSettings = new List<ServerSpecificSettingBase>();
-            ServerSpecificSettingBase[] serverSettings = CustomSettingConverter.ToServerSpecificSettings(customSetting);
-            allServerSettings.AddRange(serverSettings);
-
+            ServerSpecificSettingBase[] settings = PrepareCustomSettings(customSetting);
+            if (settings == null) return;
+            
             foreach (Player player in Player.ReadyList)
-                SSSHelper.SendSettingsToUser(player.ReferenceHub, allServerSettings.ToArray(), null);
+                SSSHelper.SendSettingsToUser(player.ReferenceHub, settings, null);
+        }
+
+        private static ServerSpecificSettingBase[] PrepareCustomSettings(ICustomSetting customSetting)
+        {   
+            if (customSetting.SpawnData.Any(s => s.MinPlayersRequired != null && s.MinPlayersRequired > Player.ReadyList.Count()))
+                return null;
+            
+            return CustomSettingConverter.ToServerSpecificSettings(customSetting);
         }
 
         /// <summary>

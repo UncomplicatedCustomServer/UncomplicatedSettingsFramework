@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using UncomplicatedSettingsFramework.Api.Enums;
 using static UserSettings.ServerSpecific.SSDropdownSetting;
 
 namespace UncomplicatedSettingsFramework.Api.Features.SpecificData
@@ -15,5 +12,6 @@ namespace UncomplicatedSettingsFramework.Api.Features.SpecificData
         public virtual List<string> Contents { get; set; } = new();
         public virtual DropdownEntryType DropdownEntryType { get; set; } = DropdownEntryType.Regular;
         public virtual int DefaultContentSelected { get; set; } = 0;
+        public virtual DynamicContentType DynamicContent { get; set; } = DynamicContentType.None;
     }
 }

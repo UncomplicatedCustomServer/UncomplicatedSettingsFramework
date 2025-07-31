@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace UncomplicatedSettingsFramework.Api.Features.SpecificData
+﻿namespace UncomplicatedSettingsFramework.Api.Features.SpecificData
 {
     public class Header : Data, IHeader
     {

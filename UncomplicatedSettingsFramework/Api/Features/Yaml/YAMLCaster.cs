@@ -14,7 +14,7 @@ using YamlDotNet.Serialization.NamingConventions;
 namespace UncomplicatedSettingsFramework.Api.Features.Yaml
 {
     /// <summary>
-    /// Casts the YAML data from <see cref="CustomItem"/> files into the plugin
+    /// Casts the YAML data from <see cref="Customsetting"/> files into the plugin
     /// </summary>
     public static class YAMLCaster
     {
@@ -37,7 +37,7 @@ namespace UncomplicatedSettingsFramework.Api.Features.Yaml
                 }
                 else if (value is IList list && property.PropertyType.IsGenericType)
                 {
-                    List<string> stringList = list.Cast<object>().Select(item => item?.ToString() ?? "").ToList();
+                    List<string> stringList = list.Cast<object>().Select(setting => setting?.ToString() ?? "").ToList();
                     serialized.Add(key, string.Join(",", stringList));
                 }
                 else if (value is Enum)
@@ -80,11 +80,11 @@ namespace UncomplicatedSettingsFramework.Api.Features.Yaml
 
                         if (!string.IsNullOrEmpty(element.Value))
                         {
-                            string[] items = element.Value.Split(',');
-                            foreach (string item in items)
+                            string[] settings = element.Value.Split(',');
+                            foreach (string setting in settings)
                             {
-                                object convertedItem = Convert.ChangeType(item.Trim(), elementType);
-                                list?.Add(convertedItem);
+                                object convertedsetting = Convert.ChangeType(setting.Trim(), elementType);
+                                list?.Add(convertedsetting);
                             }
                         }
 
@@ -152,16 +152,16 @@ namespace UncomplicatedSettingsFramework.Api.Features.Yaml
             return true;
         }
 
-        public static ICustomSetting ConvertToCustomSetting(YAMLCustomSetting yamlItem)
+        public static ICustomSetting ConvertToCustomSetting(YAMLCustomSetting yamlsetting)
         {
-            if (yamlItem?.Settings == null || yamlItem.Settings.Count == 0)
+            if (yamlsetting?.Settings == null || yamlsetting.Settings.Count == 0)
             {
-                throw new ArgumentException("The YAML item must have at least one setting.", nameof(yamlItem));
+                throw new ArgumentException("The YAML setting must have at least one setting.", nameof(yamlsetting));
             }
 
             List<Setting> convertedSettings = [];
 
-            foreach (YAMLSetting yamlSetting in yamlItem.Settings)
+            foreach (YAMLSetting yamlSetting in yamlsetting.Settings)
             {
                 if (yamlSetting.CustomDataList != null && yamlSetting.CustomDataList.Count > 0)
                 {
@@ -193,10 +193,10 @@ namespace UncomplicatedSettingsFramework.Api.Features.Yaml
 
             return new CustomSetting
             {
-                Id = yamlItem.Id,
-                Name = yamlItem.Name,
-                RequiredPermission = yamlItem.RequiredPermission,
-                SpawnData = yamlItem.SpawnData,
+                Id = yamlsetting.Id,
+                Name = yamlsetting.Name,
+                RequiredPermission = yamlsetting.RequiredPermission,
+                SpawnData = yamlsetting.SpawnData,
                 Settings = convertedSettings
             };
         }
