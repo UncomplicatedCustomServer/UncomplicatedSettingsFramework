@@ -3,27 +3,22 @@ using LabApi.Features.Wrappers;
 using LabApi.Loader;
 using LabApi.Loader.Features.Plugins;
 using LabApi.Loader.Features.Plugins.Enums;
+using LabApi.Loader;
+using LabApi.Events.Handlers;
 #elif EXILED
 using Exiled.API.Enums;
 using Exiled.API.Features;
-using LabApi.Events.Handlers;
-
-using HarmonyLib;
-
 #endif
 using System;
 using System.IO;
 using System.Reflection;
-using System.Threading.Tasks;
 using UncomplicatedSettingsFramework.Api.Features;
 using UncomplicatedSettingsFramework.Api.Features.Extensions;
 using UncomplicatedSettingsFramework.Api.Features.Helper;
 using UncomplicatedSettingsFramework.Api.Helper;
 using UncomplicatedSettingsFramework.Api.Helpers;
 using UncomplicatedSettingsFramework.Events;
-using UserSettings.ServerSpecific;
-using UnityEngine;
-using LabApi.Loader;
+using HarmonyLib;
 
 namespace UncomplicatedSettingsFramework
 {
@@ -51,7 +46,7 @@ namespace UncomplicatedSettingsFramework
 #endif
         public static Plugin Instance { get; private set; }
 
-        internal HarmonyLib.Harmony _harmony;
+        internal Harmony _harmony;
 
         internal DynamicSettingUpdater DynamicUpdater;
 
