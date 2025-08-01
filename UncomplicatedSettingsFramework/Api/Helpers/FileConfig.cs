@@ -1,8 +1,11 @@
-﻿using System;
+﻿#if EXILED
+using Exiled.API.Features;
+#endif
+using PlayerRoles;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PlayerRoles;
 using UncomplicatedSettingsFramework.Api.Enums;
 using UncomplicatedSettingsFramework.Api.Features.SpawnData;
 using UncomplicatedSettingsFramework.Api.Features.SpecificData;
@@ -95,7 +98,11 @@ namespace UncomplicatedSettingsFramework.Api.Features.Helper
             }
         ];
 
+#if EXILED
+        internal string Dir = Path.Combine(Paths.Configs, "UncomplicatedSettingsFramework");
+#elif LABAPI
         internal string Dir = Path.Combine(LabApi.Loader.Features.Paths.PathManager.Configs.ToString(), "UncomplicatedSettingsFramework");
+#endif
 
         public bool Is(string localDir = "")
         {

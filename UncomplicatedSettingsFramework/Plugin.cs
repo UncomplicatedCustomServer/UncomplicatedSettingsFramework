@@ -18,6 +18,7 @@ using UncomplicatedSettingsFramework.Api.Features.Helper;
 using UncomplicatedSettingsFramework.Api.Helper;
 using UncomplicatedSettingsFramework.Api.Helpers;
 using UncomplicatedSettingsFramework.Events;
+using ServerEvent = LabApi.Events.Handlers.ServerEvents;
 using HarmonyLib;
 
 namespace UncomplicatedSettingsFramework
@@ -59,7 +60,8 @@ namespace UncomplicatedSettingsFramework
         public override void Enable()
         {
             Instance = this;
-            
+
+            ServerEvent.WaitingForPlayers += OnWaitingForPlayers;
             HttpManager = new("usf");
             DynamicUpdater = new();
             DynamicUpdater.Start();
@@ -73,7 +75,11 @@ namespace UncomplicatedSettingsFramework
             HttpManager.RegisterEvents();
             FileConfig = new();
             if (!File.Exists(Path.Combine(ConfigurationLoader.GetConfigPath(Instance, "UncomplicatedSettingsFramework"), "UncomplicatedSettingsFramework", ".nohttp")))
-            _harmony = new($"com.ucs.usf_labapi-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
+#if LABAPI
+                _harmony = new($"com.ucs.usf_labapi-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
+#elif EXILED
+            _harmony = new($"com.ucs.usf_exiled-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
+#endif
             _harmony.PatchAll();
 
             LogManager.History.Clear();
@@ -85,6 +91,7 @@ namespace UncomplicatedSettingsFramework
 
         public override void Disable()
         {
+            ServerEvent.WaitingForPlayers -= OnWaitingForPlayers;
             DynamicUpdater?.Stop();
             PlayerExtensions.Unregister();
             SettingHandler.Unregister();
@@ -99,12 +106,12 @@ namespace UncomplicatedSettingsFramework
             FileConfig = null;
             DynamicUpdater = null;
         }
-    }
 #elif EXILED
         public override void OnEnabled()
         {
             Instance = this;
 
+            ServerEvent.WaitingForPlayers += OnWaitingForPlayers;
             HttpManager = new("usf");
             DynamicUpdater = new();
             DynamicUpdater.Start();
@@ -117,8 +124,10 @@ namespace UncomplicatedSettingsFramework
             PlayerExtensions.PlayerKills.Clear();
             HttpManager.RegisterEvents();
             FileConfig = new();
-            if (!File.Exists(Path.Combine(ConfigPath, "UncomplicatedCustomItems", ".nohttp")))
-            _harmony = new($"com.ucs.usf_labapi-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
+
+            if (!File.Exists(Path.Combine(ConfigPath, "UncomplicatedSettingsFramework", ".nohttp")))
+
+            _harmony = new($"com.ucs.usf_exiled-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
             _harmony.PatchAll();
 
             LogManager.History.Clear();
@@ -132,6 +141,7 @@ namespace UncomplicatedSettingsFramework
 
         public override void OnDisabled()
         {
+            ServerEvent.WaitingForPlayers -= OnWaitingForPlayers;
             DynamicUpdater?.Stop();
             PlayerExtensions.Unregister();
             SettingHandler.Unregister();
@@ -148,6 +158,7 @@ namespace UncomplicatedSettingsFramework
             base.OnDisabled();
 
         }
-    }
 #endif
+            private void OnWaitingForPlayers() => _ = Updater.CheckForUpdatesAsync();
+    }
 }

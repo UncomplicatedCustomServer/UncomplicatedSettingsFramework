@@ -31,6 +31,9 @@ namespace UncomplicatedSettingsFramework.Events
 
         public static void OnSpawned(PlayerSpawnedEventArgs ev)
         {
+            if (ev.Player is null)
+                return;
+
             foreach (ICustomSetting customSetting in CustomSetting.List)
                 foreach (ISpawn spawnData in customSetting.SpawnData)
                 {
@@ -47,6 +50,9 @@ namespace UncomplicatedSettingsFramework.Events
 
         public static void OnPlayerJoin(PlayerJoinedEventArgs ev)
         {
+            if (ev.Player is null)
+                return;
+
             foreach (Player player in Player.ReadyList)
                 new SyncedScaleMessages.ScaleMessage(player.ReferenceHub.transform.localScale, player.ReferenceHub).SendToAuthenticated();
 
@@ -63,20 +69,29 @@ namespace UncomplicatedSettingsFramework.Events
             }
         }
 
-
         public static void OnDeath(PlayerDeathEventArgs ev)
         {
+            if (ev.Player is null)
+                return;
+
             foreach (ICustomSetting customSetting in CustomSetting.List)
             {
-                if (customSetting.SpawnData.Any(s => s.RemoveOnDeath == true) && string.IsNullOrEmpty(customSetting.RequiredPermission) || ev.Player.HasPermissions(customSetting.RequiredPermission))
+                if (customSetting.SpawnData.Any(s => (bool)s.RemoveOnDeath))
                 {
                     ServerSpecificSettingBase[] serverSettings = CustomSettingConverter.ToServerSpecificSettings(customSetting);
                     SSSHelper.RemoveSettingsFromUser(ev.Player.ReferenceHub, serverSettings);
                 }
-                if (customSetting.SpawnData.Any(s => s.RequiredKills >= ev.Attacker.Kills()) && string.IsNullOrEmpty(customSetting.RequiredPermission) || ev.Attacker.HasPermissions(customSetting.RequiredPermission))
+
+                if (ev.Attacker is not null)
                 {
-                    LogManager.Debug($"{ev.Attacker.Nickname} has reached {ev.Attacker.Kills()} sending {customSetting.Name}");
-                    CustomSetting.RegisterCustomSettingsForPlayer(ev.Player.ReferenceHub, customSetting);
+                    bool hasRequiredKills = customSetting.SpawnData.Any(s => s.RequiredKills >= ev.Attacker.Kills());
+                    bool hasPermissionToGain = string.IsNullOrEmpty(customSetting.RequiredPermission) || ev.Attacker.HasPermissions(customSetting.RequiredPermission);
+
+                    if (hasRequiredKills && hasPermissionToGain)
+                    {
+                        LogManager.Debug($"{ev.Attacker.Nickname} has reached {ev.Attacker.Kills()} kills, sending {customSetting.Name}");
+                        CustomSetting.RegisterCustomSettingsForPlayer(ev.Player.ReferenceHub, customSetting);
+                    }
                 }
             }
         }

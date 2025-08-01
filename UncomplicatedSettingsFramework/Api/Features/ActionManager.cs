@@ -1,6 +1,8 @@
 ﻿using CommandSystem.Commands.RemoteAdmin.Dummies;
+using LabApi.Features.Enums;
 using LabApi.Features.Wrappers;
 using MapGeneration;
+using MEC;
 using Mirror;
 using NetworkManagerUtils.Dummies;
 using PlayerRoles;
@@ -51,9 +53,28 @@ namespace UncomplicatedSettingsFramework.Api.Features
                     }
                     break;
                 case "GIVE":
-                    if (args.Length > 0 && Enum.TryParse(args[0], true, out ItemType itemType))
+                    if (args.Length > 0)
                     {
-                        player.AddItem(itemType);
+                        if (args.Length > 1 && args[1].Equals("all", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (Enum.TryParse(args[0], true, out ItemType itemTypeAll))
+                            {
+                                foreach (Player p in Player.List)
+                                {
+                                    p.AddItem(itemTypeAll);
+                                }
+                            }
+                        }
+                        else if (Enum.TryParse(args[0], true, out ItemType itemType))
+                        {
+                            player.AddItem(itemType);
+                        }
+                    }
+                    break;
+                case "GIVE_AMMO":
+                    if (args.Length > 1 && Enum.TryParse(args[0], true, out ItemType ammoType) && ushort.TryParse(args[1], out ushort amount))
+                    {
+                        player.AddAmmo(ammoType, amount);
                     }
                     break;
                 case "UCR_GIVE_ROLE":
@@ -132,6 +153,8 @@ namespace UncomplicatedSettingsFramework.Api.Features
                     }
                     break;
                 case "SIZE":
+                case "SET_SCALE":
+                case "SCALE":
                     if (args.Length >= 3)
                     {
                         Vector3 scale = new(float.Parse(args[0]), float.Parse(args[1]), float.Parse(args[2]));
@@ -146,16 +169,42 @@ namespace UncomplicatedSettingsFramework.Api.Features
                     }
                     break;
                 case "GOD":
-                    player.IsGodModeEnabled = !player.IsGodModeEnabled;
+                case "SET_GODMODE":
+                    if (args.Length > 0 && bool.TryParse(args[0], out bool godModeState))
+                    {
+                        player.IsGodModeEnabled = godModeState;
+                    }
+                    else
+                    {
+                        player.IsGodModeEnabled = !player.IsGodModeEnabled;
+                    }
                     break;
                 case "TP":
-                    if (args.Length > 0 && Enum.TryParse(args[0], true, out RoomName roomType))
+                    if (args.Length > 0)
                     {
-                        player.Position = Room.Get(roomType).FirstOrDefault().Position;
+                        if (args[0].Equals("RANDOM", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Room randomRoom = Map.GetRandomRoom();
+                            if (randomRoom != null)
+                            {
+                                player.Position = randomRoom.Position;
+                            }
+                        }
+                        else if (Enum.TryParse(args[0], true, out RoomName roomType))
+                        {
+                            player.Position = Room.Get(roomType).FirstOrDefault().Position;
+                        }
+                    }
+                    break;
+                case "TELEPORT_TO_PLAYER":
+                    if (args.Length > 0 && int.TryParse(args[0], out int targetId) && Player.TryGet(targetId, out Player targetPlayer))
+                    {
+                        player.Position = targetPlayer.Position;
                     }
                     break;
                 case "CMD":
                 case "COMMAND":
+                case "EXECUTE_COMMAND":
                     if (args.Length > 0)
                     {
                         Server.RunCommand(string.Join(" ", args));
@@ -248,6 +297,44 @@ namespace UncomplicatedSettingsFramework.Api.Features
                                 }
                                 break;
                         }
+                    }
+                    break;
+                case "RESTART_ROUND":
+                    Round.Restart();
+                    break;
+                case "LOCK_DOOR":
+                    if (args.Length > 0 && Enum.TryParse(args[0], true, out DoorName doorNameLock))
+                    {
+                        Door doorToLock = Door.Get(doorNameLock.ToString());
+                        if (doorToLock != null)
+                        {
+                            doorToLock.IsLocked = true;
+                        }
+                    }
+                    break;
+                case "UNLOCK_DOOR":
+                    if (args.Length > 0 && Enum.TryParse(args[0], true, out DoorName doorNameUnlock))
+                    {
+                        Door doorToUnlock = Door.Get(doorNameUnlock.ToString());
+                        if (doorToUnlock != null)
+                        {
+                            doorToUnlock.IsLocked = false;
+                        }
+                    }
+                    break;
+                case "SET_LIGHT_COLOR":
+                    if (args.Length > 3 && Enum.TryParse(args[0], true, out FacilityZone zone) && float.TryParse(args[1], out float r) && float.TryParse(args[2], out float g) && float.TryParse(args[3], out float b))
+                    {
+                        Map.SetColorOfLights(new Color(r, g, b), zone);
+                    }
+                    break;
+                case "DELAY":
+                    if (args.Length > 1 && float.TryParse(args[0], out float delay))
+                    {
+                        Timing.CallDelayed(delay, () =>
+                        {
+                            ParseAndExecuteAction(string.Join(" ", args, 1, args.Length - 1), player);
+                        });
                     }
                     break;
             }
