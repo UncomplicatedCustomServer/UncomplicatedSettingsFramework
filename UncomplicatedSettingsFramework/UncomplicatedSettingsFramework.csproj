@@ -525,7 +525,7 @@
     <Compile Include="Api\Helpers\SSSHelper.cs" />
     <Compile Include="Api\Helpers\VersionManager.cs" />
     <Compile Include="Api\Helpers\VersionInfo.cs" />
-    <Compile Include="Api\Helpers\UpdateChecker.cs" />
+    <Compile Include="Api\Helpers\Updater.cs" />
     <Compile Include="Api\Interfaces\ICustomSetting.cs" />
     <Compile Include="Api\Interfaces\ISetting.cs" />
     <Compile Include="Api\Interfaces\ISpawn.cs" />

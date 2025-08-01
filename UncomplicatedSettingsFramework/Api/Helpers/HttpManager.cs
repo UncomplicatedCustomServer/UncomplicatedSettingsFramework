@@ -1,4 +1,6 @@
-﻿using Exiled.Loader;
+﻿#if EXILED
+using Exiled.Loader;
+#endif
 using LabApi.Events.Arguments.PlayerEvents;
 using LabApi.Features;
 using LabApi.Features.Wrappers;

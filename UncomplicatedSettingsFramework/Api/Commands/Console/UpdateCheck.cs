@@ -1,7 +1,5 @@
 using CommandSystem;
 using System;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UncomplicatedSettingsFramework.Api.Features.Helper;
 
@@ -37,8 +35,8 @@ namespace UncomplicatedSettingsFramework.Api.Commands.Console
 
             Version version = Plugin.Instance.Version;
             response = $"Currently running version {version}. Checking for updates...";
-            
-            Task.Run(async () => await UpdateChecker.CheckForUpdatesAsync());
+
+            _ = Updater.CheckForUpdatesAsync();
             return true;
         }
     }

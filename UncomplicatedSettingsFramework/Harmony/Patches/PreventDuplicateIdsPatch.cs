@@ -30,7 +30,7 @@ public static class PreventDuplicateIdsPatch
 
         if (filtered.Length != defined.Length)
         {
-            LogManager.Warn($"[SSS] Removed {defined.Length - filtered.Length} duplicate settings.");
+            LogManager.Silent($"[SSS] Removed {defined.Length - filtered.Length} duplicate settings.");
             typeof(ServerSpecificSettingsSync).GetProperty(nameof(ServerSpecificSettingsSync.DefinedSettings)).SetValue(null, filtered);
         }
     }
